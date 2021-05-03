@@ -4,8 +4,16 @@ from sklearn.model_selection import train_test_split
 import torch
 from PIL import Image
 import numpy as np
+from torchbearer import deep_to
+import torchbearer
 
+def custom_loader(state):
+    img,phow_feature, label = deep_to(next(state[torchbearer.ITERATOR]), state[torchbearer.DEVICE], state[torchbearer.DATA_TYPE])
+    batch_size = img.shape[0]
+    tmp = phow_feature.resize_(batch_size,1,224,224)
+    tmp2 = torch.cat([img,tmp],1)
     
+    state[torchbearer.X], state[torchbearer.Y_TRUE] = tmp2, label
 
 class CourseworkDataset(Dataset):
     """A Coursework dataset."""
