@@ -4,25 +4,18 @@ import torch
 from preprocess import preprocess
 from phow import cal_cluster,cal_path2phow_features
 from torch.utils.data import DataLoader
-from dataset import CourseworkDataset
+from dataset import CourseworkDataset, custom_loader
 from model import ClassifierNet
 from torchbearer import Trial
 from albumentations.pytorch import ToTensorV2
 import albumentations as A
 import torch.optim as optim
 import torch.nn as nn
-from torchbearer import deep_to
-import torchbearer
 
 
 
-def custom_loader(state):
-    img,phow_feature, label = deep_to(next(state[torchbearer.ITERATOR]), state[torchbearer.DEVICE], state[torchbearer.DATA_TYPE])
-    batch_size = img.shape[0]
-    tmp = phow_feature.resize_(batch_size,1,224,224)
-    tmp2 = torch.cat([img,tmp],1)
-    
-    state[torchbearer.X], state[torchbearer.Y_TRUE] = tmp2, label
+
+
     
 if __name__ == "__main__":
     # check if list file exist

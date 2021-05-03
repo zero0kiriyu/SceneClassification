@@ -1,1 +1,3 @@
 # SceneClassification
+
+pyhton main.py

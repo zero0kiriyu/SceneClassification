@@ -1,5 +1,4 @@
 from efficientnet_pytorch import EfficientNet
-import json
 import torch.nn as nn
 
 import torch
