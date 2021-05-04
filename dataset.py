@@ -7,21 +7,25 @@ import numpy as np
 from torchbearer import deep_to
 import torchbearer
 
+
 def custom_loader(state):
-    img,phow_feature, label = deep_to(next(state[torchbearer.ITERATOR]), state[torchbearer.DEVICE], state[torchbearer.DATA_TYPE])
+    img, phow_feature, label = deep_to(next(
+        state[torchbearer.ITERATOR]), state[torchbearer.DEVICE], state[torchbearer.DATA_TYPE])
     batch_size = img.shape[0]
-    tmp = phow_feature.resize_(batch_size,1,224,224)
-    tmp2 = torch.cat([img,tmp],1)
-    
+    tmp = phow_feature.resize_(batch_size, 1, 224, 224)
+    tmp2 = torch.cat([img, tmp], 1)
+
     state[torchbearer.X], state[torchbearer.Y_TRUE] = tmp2, label
+
 
 class CourseworkDataset(Dataset):
     """A Coursework dataset."""
-    def __init__(self, transform,mode,path2phow_features):
- 
+
+    def __init__(self, transform, mode, path2phow_features):
+
         super(CourseworkDataset, self).__init__()
         self.transform = transform
-        self.mode = mode        
+        self.mode = mode
         self.path2phow_features = path2phow_features
         if mode == "predict":
             predict_list = pd.read_csv('test_list.csv')
@@ -29,7 +33,8 @@ class CourseworkDataset(Dataset):
             self.labels = predict_list['predict_label'].tolist()
         else:
             train_list = pd.read_csv('train_list.csv')
-            train, test = train_test_split(train_list, test_size=0.33, random_state=42)
+            train, test = train_test_split(
+                train_list, test_size=0.33, random_state=42)
             if mode == "train":
                 self.images = train['path'].tolist()
                 self.labels = train['label'].tolist()
@@ -38,16 +43,16 @@ class CourseworkDataset(Dataset):
                 self.labels = test['label'].tolist()
             else:
                 raise ValueError
-            
+
     def __len__(self):
         return len(self.images)
- 
+
     def __getitem__(self, idx):
         img, label = self.images[idx], self.labels[idx]
 
         phow_feature = self.path2phow_features[img][0]
         phow_feature = torch.tensor(phow_feature)
-        
+
         image = Image.open(img).convert("RGB")
         # Convert PIL image to numpy array
         image_np = np.array(image)
@@ -55,7 +60,7 @@ class CourseworkDataset(Dataset):
         augmented = self.transform(image=image_np)
         # Convert numpy array to PIL Image
         img = augmented['image']
-        
+
         label = torch.tensor(label)
- 
-        return img,phow_feature, label
+
+        return img, phow_feature, label

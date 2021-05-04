@@ -2,7 +2,7 @@ import os
 import pickle
 import torch
 from preprocess import preprocess
-from phow import cal_cluster,cal_path2phow_features
+from phow import cal_cluster, cal_path2phow_features
 from torch.utils.data import DataLoader
 from dataset import CourseworkDataset, custom_loader
 from model import ClassifierNet
@@ -13,20 +13,16 @@ import torch.optim as optim
 import torch.nn as nn
 
 
-
-
-
-    
 if __name__ == "__main__":
     # check if list file exist
     print('checking the datalist')
     if not os.path.exists('train_list.csv') or not os.path.exists('test_list.csv'):
-        #do preprocess again
+        # do preprocess again
         print('datalist not exist')
         preprocess()
     else:
         print('datalist exist, skip preprocess')
-    
+
     # calculate the phow cluster
     clusters = None
     print('checking the phow clusters')
@@ -37,7 +33,7 @@ if __name__ == "__main__":
     else:
         print('clusters exist')
         clusters = pickle.load(open("clusters.pkl", "rb"))
-    
+
     # pre-calulate the phow features
     path2phow_features = {}
     print('checking the phow features')
@@ -48,13 +44,15 @@ if __name__ == "__main__":
     else:
         print('features exist')
         path2phow_features = pickle.load(open("path2phow_features.pkl", "rb"))
-        
+
     # define data augmentation
     tfms = A.Compose(
         [
-            A.Resize(224,224,always_apply=True),
-            A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=15, p=0.5),
-            A.RGBShift(r_shift_limit=15, g_shift_limit=15, b_shift_limit=15, p=0.5),
+            A.Resize(224, 224, always_apply=True),
+            A.ShiftScaleRotate(
+                shift_limit=0.05, scale_limit=0.05, rotate_limit=15, p=0.5),
+            A.RGBShift(r_shift_limit=15, g_shift_limit=15,
+                       b_shift_limit=15, p=0.5),
             A.RandomBrightnessContrast(p=0.5),
             A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
             ToTensorV2(),
@@ -62,22 +60,23 @@ if __name__ == "__main__":
     )
 
     # load dataset
-    trainset = CourseworkDataset(tfms,'train',path2phow_features)
+    trainset = CourseworkDataset(tfms, 'train', path2phow_features)
     trainloader = DataLoader(trainset, batch_size=256, shuffle=True)
-    valset = CourseworkDataset(tfms,'test',path2phow_features)
+    valset = CourseworkDataset(tfms, 'test', path2phow_features)
     valloader = DataLoader(valset, batch_size=256, shuffle=True)
-    testset = CourseworkDataset(tfms,'predict',path2phow_features)
+    testset = CourseworkDataset(tfms, 'predict', path2phow_features)
     testloader = DataLoader(testset, batch_size=256, shuffle=True)
-    
+
     # define model and loss
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = ClassifierNet().to(device)
-    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.001)
+    optimizer = optim.Adam(
+        filter(lambda p: p.requires_grad, model.parameters()), lr=0.001)
     loss = nn.CrossEntropyLoss()
-
 
     # begin to train
     trial = Trial(model, optimizer, loss, metrics=['acc', 'loss']).to(device)
     trial.with_loader(custom_loader)
-    trial.with_generators(train_generator=trainloader, val_generator=valloader,test_generator=testloader)
+    trial.with_generators(train_generator=trainloader,
+                          val_generator=valloader, test_generator=testloader)
     history = trial.run(epochs=50, verbose=1)
